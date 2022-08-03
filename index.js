@@ -3,13 +3,16 @@ const express = require('express');
 var path = require('path');
 const http = require('http');
 const { Server } = require("socket.io");
+const axios = require('axios');
 
-const port = process.env.PORT;
+const config = require('./config.json');
+
+const port = 3000;
 const app = express();
 var server = http.createServer(app);
 const io = new Server(server);
-const client = new Client(process.env.TOKEN);
-const mcserver = client.server(process.env.SERVERID);
+const client = new Client(config.token);
+const mcserver = client.server(config.server_id);
 
 
 mcserver.subscribe();
@@ -53,6 +56,17 @@ function ServerStatus(status) {
     return messages[status]
 }
 
+async function playerheads(list) {
+    const output = [];
+    for (const p of list) {
+        const test = `https://playerdb.co/api/player/minecraft/${p}`;
+        const data = await axios.get(test);
+        output.push(data.data.data.player.avatar);
+    }
+    return output
+}
+
+
 async function startServer() {
     try {
         await mcserver.start();
@@ -73,7 +87,7 @@ async function getServer() {
     console.log('running getServer...')
     const data = {};
     await mcserver.get();
-    
+
     data.status = ServerStatus(mcserver.status);
     data.status_raw =  mcserver.status;
     data.motd = mcserver.motd;
@@ -81,6 +95,7 @@ async function getServer() {
         data.player_count = mcserver.players.count;
         data.player_max = mcserver.players.max;
         data.players = mcserver.players.list
+        data.heads = await playerheads(mcserver.players.list);
     }
 
     console.log(data);
