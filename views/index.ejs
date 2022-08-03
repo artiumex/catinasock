@@ -1,0 +1,45 @@
+<%- include('head', { title: 'Server Home Page' }) -%>
+
+<div class="row">
+    <div class="side">
+        <center>
+        <h2>The Prophecy Unfolds:</h2>
+        <img src="https://i.imgur.com/1kSXnmw.jpg" height="200">
+        <p>The Minecraft server for those who are comfy :)</p>
+        <p>and who wear socks >:)</p>
+        </center>
+    </div>
+    <div class="main">
+        <center>
+            <h2>Minecraft Server</h2>
+            <p>Server Status: <span id="status"></span></p>
+            <button id="startBtn">Start</button>
+            <button id="stopBtn">Stop</button>
+        </center>
+    </div>
+</div>
+  
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io();
+  const status_block = document.getElementById('status');
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+
+  startBtn.onclick = function(){
+    socket.emit('start server');
+  };
+  stopBtn.onclick = function(){
+    socket.emit('stop server');
+  };
+
+  socket.on('new data', function (data) {
+    if (data.status_raw == 1) {
+        status_block.innerHTML = data.status + " " + data.player_count + "/" + data.player_max;
+    } else {
+        status_block.innerHTML = data.status;
+    }
+  });
+</script>
+
+<%- include('foot') -%>
