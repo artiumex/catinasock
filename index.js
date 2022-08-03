@@ -4,8 +4,6 @@ var path = require('path');
 const http = require('http');
 const { Server } = require("socket.io");
 
-const config = require('./config.json');
-
 const port = 3000;
 const app = express();
 var server = http.createServer(app);
