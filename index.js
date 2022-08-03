@@ -10,8 +10,8 @@ const port = 3000;
 const app = express();
 var server = http.createServer(app);
 const io = new Server(server);
-const client = new Client(config.token);
-const mcserver = client.server(config.server_id);
+const client = new Client(process.env.TOKEN);
+const mcserver = client.server(process.env.SERVERID);
 
 
 mcserver.subscribe();
