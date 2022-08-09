@@ -8,14 +8,17 @@
     <%- dat.description %>
     <br>
     <p>Server Status: <span id="status">-</span></p>
+    <p><span id="motd"></span></p>
     <button id="startBtn">Start</button>
     <button id="stopBtn">Stop</button>
 </center>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/nailujx86/mcmotdparser@master/dist/motdparserweb.js" type="text/javascript"></script>
 <script>
     var socket = io(`/${document.getElementById('mydiv').dataset.nsp}`);
     const status_block = document.getElementById('status');
+    const motd_block = document.getElementById('motd');
     const heads_block = document.getElementById('heads');
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
@@ -31,6 +34,9 @@
         if (data.status_raw == 1) {
             heads_block.innerHTML = "";
             status_block.innerHTML = data.status + " " + data.player_count + "/" + data.player_max;
+            motdParser.toHtml(data.motd, function(err, res) {
+                motd_block.innerHTML = res;
+            });
             for (const p of data.heads) {
                 var elem = document.createElement("img");
                 elem.src = p;
@@ -39,6 +45,7 @@
             }
         } else {
             status_block.innerHTML = data.status;
+            motd_block.innerHTML = "";
         }
     });
 </script>
