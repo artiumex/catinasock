@@ -10,14 +10,9 @@ const app = express();
 var server = http.createServer(app);
 const io = new Server(server);
 const client = new Client(process.env.TOKEN);
-const mcserver = client.server(process.env.SERVERID);
 
-
-mcserver.subscribe();
-
-mcserver.on("status", function(server) {
-    getServer();
-});
+const mcservers = require('./servers.json');
+const servers = new Map();
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -28,30 +23,69 @@ server.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 })
 
+for (const data of mcservers) {
+    const mcserver = client.server(data.id);
+    const s = data.alias;
+    const nsp = io.of(`/${s}`)
+
+
+    servers.set(data.alias, {
+        s: mcserver,
+        nsp: nsp,
+    });
+
+    mcserver.subscribe();
+    mcserver.on("status", function(server) {
+        getServer(data.alias);
+    });
+
+    app.get(`/${data.name}`, function(req, res){
+        res.render('server', {
+            servers: mcservers,
+            dat: data,
+        });
+    });
+
+    nsp.on('connection', (socket) => {
+        getServer(s);
+        console.log(`[${s}] user connect`);
+        socket.on('disconnect', () => {
+          console.log(`[${s}] user disconnect`);
+        });
+        socket.on('start server', function() {
+            console.log(`[${s}] starting server...`);
+            startServer(s);
+        });
+        socket.on('stop server', function() {
+            console.log(`[${s}] stopping server...`);
+            stopServer(s);
+        });
+    });
+}
+
+
+
 app.get('/', function(req, res){
-    res.render('');
+    res.render('', {
+        servers: mcservers,
+    });
 });
 
-io.on('connection', (socket) => {
-    getServer(); //update all connections
-    console.log('a user connected');
-    socket.on('disconnect', () => {
-      console.log('user disconnected');
-    });
-    socket.on('start server', function() {
-        console.log('starting server...');
-        startServer();
-    });
-    socket.on('stop server', function() {
-        console.log('stopping server...');
-        stopServer();
-    });
-});
+
 
 
 function ServerStatus(status) {
     const messages = ['Offline', 'Online', 'Starting...', 'Stopping...','Restarting...','Saving...','Loading...','Crashed!','Pending','','Preparing'];
     return messages[status]
+}
+
+function chooseServer(text) {
+    try {
+        const chosenserver = servers.get(text);
+        return chosenserver;
+    } catch (e) {
+        console.log(e);
+    }
 }
 
 async function playerheads(list) {
@@ -65,7 +99,9 @@ async function playerheads(list) {
 }
 
 
-async function startServer() {
+async function startServer(s) {
+    const chosenserver = chooseServer(s);
+    const mcserver = chosenserver.s;
     try {
         await mcserver.start();
     } catch (e) {
@@ -73,7 +109,9 @@ async function startServer() {
     }
 }
 
-async function stopServer() {
+async function stopServer(s) {
+    const chosenserver = chooseServer(s);
+    const mcserver = chosenserver.s;
     try {
         await mcserver.stop();
     } catch (e) {
@@ -81,7 +119,9 @@ async function stopServer() {
     }
 }
 
-async function getServer() {
+async function getServer(s) {
+    const chosenserver = chooseServer(s);
+    const mcserver = chosenserver.s;
     console.log('running getServer...')
     const data = {};
     await mcserver.get();
@@ -98,5 +138,6 @@ async function getServer() {
 
     console.log(data);
 
-    io.emit('new data', data);
+    chosenserver.nsp.emit('new data', data);
 }
+
