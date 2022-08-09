@@ -1,0 +1,48 @@
+<%- include('head', { title: dat.display + " Server", servers: servers }) -%>
+<div id="mydiv" data-nsp=<%= dat.alias %>></div>
+<br><br>
+
+<center>
+    <div id="heads"></div>
+    <h2><%= dat.display %> Server</h2>
+    <%- dat.description %>
+    <br>
+    <p>Server Status: <span id="status">-</span></p>
+    <button id="startBtn">Start</button>
+    <button id="stopBtn">Stop</button>
+</center>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var socket = io(`/${document.getElementById('mydiv').dataset.nsp}`);
+    const status_block = document.getElementById('status');
+    const heads_block = document.getElementById('heads');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+
+    startBtn.onclick = function(){
+        socket.emit('start server');
+    };
+    stopBtn.onclick = function(){
+        socket.emit('stop server');
+    };
+
+    socket.on('new data', function (data) {
+        if (data.status_raw == 1) {
+            heads_block.innerHTML = "";
+            status_block.innerHTML = data.status + " " + data.player_count + "/" + data.player_max;
+            for (const p of data.heads) {
+                var elem = document.createElement("img");
+                elem.src = p;
+                elem.height = 100;
+                heads_block.appendChild(elem);
+            }
+        } else {
+            status_block.innerHTML = data.status;
+        }
+    });
+</script>
+
+<br><br><br><br><br><br><br><br>
+
+<%- include('foot') -%>
