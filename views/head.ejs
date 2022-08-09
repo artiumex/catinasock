@@ -111,4 +111,7 @@
     
     <div class="navbar">
       <a href="/">Home</a>
+      <% for (const x of servers) { %>
+        <a href="/<%= x.name %>"><%= x.display %></a>
+      <% } %>
     </div>
